@@ -1,0 +1,118 @@
+
+SELECT t_diagram.Diagram_ID, t_diagram.Name AS DiagramName, t_package.Name & ":" & t_object.Name AS Element, t_object.Object_Type AS Type, t_objectproperties.Property AS TagName, t_objectproperties.Value AS TagValueOrNote
+FROM
+	(((t_diagramobjects INNER JOIN t_diagram ON t_diagramobjects.Diagram_ID = t_diagram.Diagram_ID)
+	INNER JOIN t_object ON t_object.Object_ID = t_diagramobjects.Object_ID)
+	INNER JOIN t_package ON t_package.Package_ID = t_object.Package_ID)
+	INNER JOIN t_objectproperties ON t_objectproperties.Object_ID = t_object.Object_ID
+WHERE
+	NOT t_objectproperties.Value = "NOTE"
+	AND t_diagram.Diagram_ID IN (<Search Term>)
+UNION ALL
+SELECT t_diagram.Diagram_ID, t_diagram.Name AS DiagramName, t_package.Name & ":" & t_object.Name AS Element, t_object.Object_Type AS Type, t_objectproperties.Property AS TagName, t_objectproperties.Notes AS TagValueOrNote
+FROM
+	(((t_diagramobjects INNER JOIN t_diagram ON t_diagramobjects.Diagram_ID = t_diagram.Diagram_ID)
+	INNER JOIN t_object ON t_object.Object_ID = t_diagramobjects.Object_ID)
+	INNER JOIN t_package ON t_package.Package_ID = t_object.Package_ID)
+	INNER JOIN t_objectproperties ON t_objectproperties.Object_ID = t_object.Object_ID
+WHERE
+	t_objectproperties.Value = "NOTE"
+	AND t_diagram.Diagram_ID IN (<Search Term>)
+
+	
+UNION ALL	
+SELECT t_diagram.Diagram_ID, t_diagram.Name AS DiagramName, t_package.Name & ":" & t_object.Name & "." & t_attribute.Name As Element, "Attribute" AS Type, t_attributetag.Property AS TagName, t_attributetag.Value AS TagValueOrNote
+FROM
+	((((t_diagramobjects INNER JOIN t_diagram ON t_diagramobjects.Diagram_ID = t_diagram.Diagram_ID)
+	INNER JOIN t_object ON t_object.Object_ID = t_diagramobjects.Object_ID)
+	INNER JOIN t_package ON t_object.Package_ID = t_package.Package_ID)
+	INNER JOIN t_attribute ON t_attribute.Object_ID = t_object.Object_ID)
+	INNER JOIN t_attributetag ON t_attributetag.ElementID = t_attribute.ID
+WHERE
+	NOT t_attributetag.Value = "NOTE"
+	AND t_diagram.Diagram_ID IN (<Search Term>)
+UNION ALL	
+SELECT t_diagram.Diagram_ID, t_diagram.Name AS DiagramName, t_package.Name & ":" & t_object.Name & "." & t_attribute.Name As Element, "Attribute" AS Type, t_attributetag.Property AS TagName, t_attributetag.Notes AS TagValueOrNote
+FROM
+	((((t_diagramobjects INNER JOIN t_diagram ON t_diagramobjects.Diagram_ID = t_diagram.Diagram_ID)
+	INNER JOIN t_object ON t_object.Object_ID = t_diagramobjects.Object_ID)
+	INNER JOIN t_package ON t_object.Package_ID = t_package.Package_ID)
+	INNER JOIN t_attribute ON t_attribute.Object_ID = t_object.Object_ID)
+	INNER JOIN t_attributetag ON t_attributetag.ElementID = t_attribute.ID
+WHERE
+	t_attributetag.Value = "NOTE"
+	AND t_diagram.Diagram_ID IN (<Search Term>)
+
+
+UNION ALL
+SELECT t_diagram.Diagram_ID, t_diagram.Name AS DiagramName, t_package.Name & ":" & t_object.Name & " | " & t_connector.Name & " | " & t_package_1.Name & ":" & t_object_1.Name AS Element, "Associatie" AS Type, t_connectortag.Property AS TagName, t_connectortag.Value AS TagValueOrNote
+FROM
+	(((((((t_diagramobjects INNER JOIN t_diagram ON t_diagramobjects.Diagram_ID = t_diagram.Diagram_ID)
+	INNER JOIN t_object ON t_object.Object_ID = t_diagramobjects.Object_ID)
+	INNER JOIN t_package ON t_object.Package_ID = t_package.Package_ID)
+	INNER JOIN t_connector ON t_connector.Start_Object_ID = t_object.Object_ID)
+	INNER JOIN t_diagramlinks ON t_diagramlinks.ConnectorID = t_connector.Connector_ID AND t_diagramlinks.DiagramID = t_diagramobjects.Diagram_ID)
+	INNER JOIN (t_connector AS t_connector_1 INNER JOIN t_object AS t_object_1 ON t_connector_1.End_Object_ID = t_object_1.Object_ID) ON t_connector.Connector_ID = t_connector_1.Connector_ID)
+	INNER JOIN t_package AS t_package_1 ON t_package_1.Package_ID = t_object_1.Package_ID)
+	INNER JOIN t_connectortag ON t_connectortag.ElementID = t_connector.Connector_ID
+WHERE
+	NOT t_connectortag.Value = "NOTE"
+	AND (t_connector.Connector_Type = "Association" OR t_connector.Connector_Type = "Aggregation" OR t_connector.Connector_Type  = "Composition")
+	AND t_diagramlinks.Geometry LIKE "#WC#DIR=1#WC#"
+	AND t_diagramlinks.Hidden = false
+	AND t_diagram.Diagram_ID IN (<Search Term>)
+UNION ALL
+SELECT t_diagram.Diagram_ID, t_diagram.Name AS DiagramName, t_package.Name & ":" & t_object.Name & " | " & t_connector.Name & " | " & t_package_1.Name & ":" & t_object_1.Name AS Element, "Associatie" AS Type, t_connectortag.Property AS TagName, t_connectortag.Notes AS TagValueOrNote
+FROM
+	(((((((t_diagramobjects INNER JOIN t_diagram ON t_diagramobjects.Diagram_ID = t_diagram.Diagram_ID)
+	INNER JOIN t_object ON t_object.Object_ID = t_diagramobjects.Object_ID)
+	INNER JOIN t_package ON t_object.Package_ID = t_package.Package_ID)
+	INNER JOIN t_connector ON t_connector.Start_Object_ID = t_object.Object_ID)
+	INNER JOIN t_diagramlinks ON t_diagramlinks.ConnectorID = t_connector.Connector_ID AND t_diagramlinks.DiagramID = t_diagramobjects.Diagram_ID)
+	INNER JOIN (t_connector AS t_connector_1 INNER JOIN t_object AS t_object_1 ON t_connector_1.End_Object_ID = t_object_1.Object_ID) ON t_connector.Connector_ID = t_connector_1.Connector_ID)
+	INNER JOIN t_package AS t_package_1 ON t_package_1.Package_ID = t_object_1.Package_ID)
+	INNER JOIN t_connectortag ON t_connectortag.ElementID = t_connector.Connector_ID
+WHERE
+	t_connectortag.Value = "NOTE"
+	AND (t_connector.Connector_Type = "Association" OR t_connector.Connector_Type = "Aggregation" OR t_connector.Connector_Type  = "Composition")
+	AND t_diagramlinks.Geometry LIKE "#WC#DIR=1#WC#"
+	AND t_diagramlinks.Hidden = false
+	AND t_diagram.Diagram_ID IN (<Search Term>)
+UNION ALL
+SELECT t_diagram.Diagram_ID, t_diagram.Name AS DiagramName, t_package_1.Name & ":" & t_object_1.Name & " | " & t_connector.Name & " | " & t_package.Name & ":" & t_object.Name AS Element, "Associatie" AS Type, t_connectortag.Property AS TagName, t_connectortag.Value AS TagValueOrNote
+FROM
+	(((((((t_diagramobjects INNER JOIN t_diagram ON t_diagramobjects.Diagram_ID = t_diagram.Diagram_ID)
+	INNER JOIN t_object ON t_object.Object_ID = t_diagramobjects.Object_ID)
+	INNER JOIN t_package ON t_object.Package_ID = t_package.Package_ID)
+	INNER JOIN t_connector ON t_connector.Start_Object_ID = t_object.Object_ID)
+	INNER JOIN t_diagramlinks ON t_diagramlinks.ConnectorID = t_connector.Connector_ID AND t_diagramlinks.DiagramID = t_diagramobjects.Diagram_ID)
+	INNER JOIN (t_connector AS t_connector_1 INNER JOIN t_object AS t_object_1 ON t_connector_1.End_Object_ID = t_object_1.Object_ID) ON t_connector.Connector_ID = t_connector_1.Connector_ID)
+	INNER JOIN t_package AS t_package_1 ON t_package_1.Package_ID = t_object_1.Package_ID)
+	INNER JOIN t_connectortag ON t_connectortag.ElementID = t_connector.Connector_ID
+WHERE
+	NOT t_connectortag.Value = "NOTE"
+	AND (t_connector.Connector_Type = "Association" OR t_connector.Connector_Type = "Aggregation" OR t_connector.Connector_Type  = "Composition")
+	AND t_diagramlinks.Geometry LIKE "#WC#DIR=-1#WC#"
+	AND t_diagramlinks.Hidden = false
+	AND t_diagram.Diagram_ID IN (<Search Term>)
+UNION ALL
+SELECT t_diagram.Diagram_ID, t_diagram.Name AS DiagramName, t_package_1.Name & ":" & t_object_1.Name & " | " & t_connector.Name & " | " & t_package.Name & ":" & t_object.Name AS Element, "Associatie" AS Type, t_connectortag.Property AS TagName, t_connectortag.Notes AS TagValueOrNote
+FROM
+	(((((((t_diagramobjects INNER JOIN t_diagram ON t_diagramobjects.Diagram_ID = t_diagram.Diagram_ID)
+	INNER JOIN t_object ON t_object.Object_ID = t_diagramobjects.Object_ID)
+	INNER JOIN t_package ON t_object.Package_ID = t_package.Package_ID)
+	INNER JOIN t_connector ON t_connector.Start_Object_ID = t_object.Object_ID)
+	INNER JOIN t_diagramlinks ON t_diagramlinks.ConnectorID = t_connector.Connector_ID AND t_diagramlinks.DiagramID = t_diagramobjects.Diagram_ID)
+	INNER JOIN (t_connector AS t_connector_1 INNER JOIN t_object AS t_object_1 ON t_connector_1.End_Object_ID = t_object_1.Object_ID) ON t_connector.Connector_ID = t_connector_1.Connector_ID)
+	INNER JOIN t_package AS t_package_1 ON t_package_1.Package_ID = t_object_1.Package_ID)
+	INNER JOIN t_connectortag ON t_connectortag.ElementID = t_connector.Connector_ID
+WHERE
+	t_connectortag.Value = "NOTE"
+	AND (t_connector.Connector_Type = "Association" OR t_connector.Connector_Type = "Aggregation" OR t_connector.Connector_Type  = "Composition")
+	AND t_diagramlinks.Geometry LIKE "#WC#DIR=-1#WC#"
+	AND t_diagramlinks.Hidden = false
+	AND t_diagram.Diagram_ID IN (<Search Term>)
+
+	
+	
+ORDER BY 1, 2, 3, 4, 5

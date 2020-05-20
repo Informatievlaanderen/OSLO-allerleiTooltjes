@@ -1,0 +1,50 @@
+-- "Popular Tags on Classifiers (Classes, DataTypes, Enumerations), Attributes and Connectors in Branch" (Branch gekozen in ProjectBrowser)
+-- NOTE: Werkt niet voor tag waarde 'NOTE' omdate NOTES niet kunnen worden gelezen in een genest SELECT statement "Invalid Memo, OLE or Hyperlink Object in subquery"
+
+-- Class, Datatype, Enumeration
+SELECT 
+	(SELECT t_package.Name FROM t_package WHERE t_object.Package_ID = t_package.Package_ID) & ":" & t_object.Name AS Element,
+    Object_Type AS Aard,
+    (SELECT top 1 t_objectproperties.value FROM t_objectproperties WHERE t_objectproperties.property = 'label-nl'         AND t_objectproperties.Object_ID = t_object.Object_ID) AS 'label-nl',
+    (SELECT top 1 t_objectproperties.value FROM t_objectproperties WHERE t_objectproperties.property = 'definition-nl'    AND t_objectproperties.Object_ID = t_object.Object_ID) AS 'definition-nl',
+    (SELECT top 1 t_objectproperties.value FROM t_objectproperties WHERE t_objectproperties.property = 'usageNote-nl'     AND t_objectproperties.Object_ID = t_object.Object_ID) AS 'usageNote-nl',
+    (SELECT top 1 t_objectproperties.value FROM t_objectproperties WHERE t_objectproperties.property = 'ap-definition-nl' AND t_objectproperties.Object_ID = t_object.Object_ID) AS 'ap-definition-nl',
+    (SELECT top 1 t_objectproperties.value FROM t_objectproperties WHERE t_objectproperties.property = 'ap-usageNote-nl'  AND t_objectproperties.Object_ID = t_object.Object_ID) AS 'ap-usageNote-nl'
+FROM t_object
+WHERE (Object_Type = "Class" OR Object_Type = "DataType" OR Object_Type = "Enumeration")
+	AND t_object.Package_ID IN (#Branch#)
+
+
+UNION ALL 
+-- Attribute
+SELECT 
+	(SELECT t_package.Name FROM t_package WHERE t_object.Package_ID = t_package.Package_ID) & ":" & t_object.Name & "." & t_attribute.Name AS Element,
+	"Attribute" AS Aard,
+	(SELECT top 1 t_attributetag.VALUE FROM t_attributetag WHERE t_attributetag.Property = 'label-nl'         AND t_attributetag.ElementID = t_attribute.id) AS 'label-nl',
+	(SELECT top 1 t_attributetag.VALUE FROM t_attributetag WHERE t_attributetag.Property = 'definition-nl'    AND t_attributetag.ElementID = t_attribute.id) AS 'definition-nl',
+	(SELECT top 1 t_attributetag.VALUE FROM t_attributetag WHERE t_attributetag.Property = 'usageNote-nl'     AND t_attributetag.ElementID = t_attribute.id) AS 'usageNote-nl',
+	(SELECT top 1 t_attributetag.VALUE FROM t_attributetag WHERE t_attributetag.Property = 'ap-definition-nl' AND t_attributetag.ElementID = t_attribute.id) AS 'ap-definition-nl',
+	(SELECT top 1 t_attributetag.VALUE FROM t_attributetag WHERE t_attributetag.Property = 'ap_usageNote-nl'  AND t_attributetag.ElementID = t_attribute.id) AS 'ap_usageNote-nl'                                 
+	FROM t_object
+    INNER JOIN t_attribute ON t_attribute.Object_ID = t_object.Object_ID
+WHERE t_object.Package_ID IN (#Branch#)
+
+
+UNION ALL 
+-- Connector - richtingspijl niet in acht genomen - associatieklassen niet in acht genomen
+SELECT 
+	(SELECT package_from.Name FROM t_package package_from WHERE object_from.Package_ID = package_from.Package_ID) & ":" & object_from.Name & " | " & t_connector.Name & " | " & (SELECT package_to.Name FROM t_package package_to where object_to.Package_ID = package_to.Package_ID) & ":" & object_to.Name AS Element,
+    "Associatie" AS Aard,                 
+    (SELECT top 1 t_connectortag.VALUE FROM t_connectortag WHERE t_connectortag.Property = 'label-nl'         AND t_connectortag.ElementID = t_connector.connector_id) AS 'label-nl',
+    (SELECT top 1 t_connectortag.VALUE FROM t_connectortag WHERE t_connectortag.Property = 'definition-nl'    AND t_connectortag.ElementID = t_connector.connector_id) AS 'definition-nl',
+    (SELECT top 1 t_connectortag.VALUE FROM t_connectortag WHERE t_connectortag.Property = 'usageNote-nl'     AND t_connectortag.ElementID = t_connector.connector_id) AS 'usageNote-nl',                                            
+    (SELECT top 1 t_connectortag.VALUE FROM t_connectortag WHERE t_connectortag.Property = 'ap-definition-nl' AND t_connectortag.ElementID = t_connector.connector_id) AS 'ap-definition-nl',
+    (SELECT top 1 t_connectortag.VALUE FROM t_connectortag WHERE t_connectortag.Property = 'ap-usageNote-nl'  AND t_connectortag.ElementID = t_connector.connector_id) AS 'ap-usageNote-nl'                                           
+FROM
+	(t_connector INNER JOIN t_object object_from ON t_connector.Start_Object_ID = object_from.Object_ID)
+    INNER JOIN t_object object_to ON object_to.Object_ID = t_connector.End_Object_ID
+WHERE (t_connector.Connector_Type  = "Association" OR t_connector.Connector_Type  = "Aggregation" OR t_connector.Connector_Type  = "Composition")
+	AND object_from.Package_ID IN (#Branch#)
+
+
+ORDER BY 1, 2
