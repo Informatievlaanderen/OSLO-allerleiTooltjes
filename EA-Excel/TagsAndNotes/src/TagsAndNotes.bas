@@ -25,9 +25,8 @@ Public Sub PullFromEA()
     Call xlsc.AddColumn("ap-usageNote-nl")
     Application.ScreenUpdating = False
     Call eapc.PullAll(xlsc)
-    Call xlsc.FitAllColumns
+    Call xlsc.ShapeUpSheetAndCloseConnector
     Application.ScreenUpdating = True
-    Call xlsc.CloseConnector
     Call MsgBox("Pull complete.", vbInformation)
 End Sub
 

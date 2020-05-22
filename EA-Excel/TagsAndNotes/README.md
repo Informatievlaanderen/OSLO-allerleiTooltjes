@@ -37,8 +37,12 @@ Dit moet één keer gebeuren per computer waarop je werkt en is alleen mogelijk 
   - Open het menu View -> Macro's -> View Macro's.
   - Selecteer eender welke macro en klik "Edit"; VBA opent.
   - In VBA: open het menu Tools -> References.
-  - Vink aan: "Enterprise Architect Object Model 2.10" (Deze referentie verwijst bijvoorbeeld naar locatie C:\Program Files (x86)\EA\EA.TLB)
+  - Vink aan: "Enterprise Architect Object Model 2.10". Onderstaande figuur toont een mogelijke lokatie voor deze referentie.
+  - Vink ook minstens de andere referenties aan zoals getoond in onderstaande figuur.
   - Klik OK en sluit VBA.
+  
+![ToolsReferences](jpg/ToolsReferences.JPG)
+
 - Zorg er voor dat de macro's bereikbaar zijn via het menu systeem:
   - Open het menu File -> Options -> Customize the Ribbon.
   - Onder 'Customize the Ribbon' (rechter kolom), selecteer 'Main Tabs'.
@@ -69,17 +73,17 @@ Er zijn kolomhoofdingen met de namen van enkele populaire tags, voorafgegaan doo
 Er zijn rijhoofdingen met unieke identificatie van elk in OSLO context mogelijk te behandelen item, met volgende syntax:
 - Een hoofding bestaat uit één of meerdere velden, gescheiden door "|".
 - Voor klassen, datatypes en enumeraties is er één veld (1):
-  - Respectievelijk "k", "d" of "e", gevolgd door de UML naam.
+  - Respectievelijk "k=", "d=" of "e=", gevolgd door de packagenaam, gevolgd door "::", gevolgd door de UML naam.
 - Voor attributen zijn er twee velden:
   - Een veld voor het item waartoe het attribuut behoort, zoals in (1).
-  - "a" gevolgd door de UML naam van het attribuut.
+  - "a=" gevolgd door de UML naam van het attribuut.
 - Voor connectoren (enkel deze met niet-lege UML naam worden in acht genomen) zijn er drie velden:
   - Een veld voor het item aan de source kant van de connector, zoals in (1).
-  - "c" gevolgd door de UML naam van de connector.
+  - "c=" gevolgd door de UML naam van de connector.
   - Een veld voor het item aan de target kant van de connector, zoals in (1).
 - Voor rollen (enkel deze met niet lege UML naam worden in acht genomen) zijn er drie velden:
   - Een veld voor het item waarin de rol zal voorkomen in de specificatie (dus aan de andere kant van de connector), zoals in (1).
-  - "r" gevolgd door de UML naam van de rol.
+  - "r=" gevolgd door de UML naam van de rol.
   - Een veld voor het item aan dezelfde kant van de connector, zoals in (1).
 
 ### Tags en notes invullen

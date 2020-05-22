@@ -10,8 +10,8 @@ Attribute VB_Exposed = False
 Option Explicit
 
 Private sheet As Excel.Worksheet
-Private columnKeys As Collection
-Private rowKeys As Collection
+Private columnKeys As collection
+Private rowKeys As collection
 
 ' Creates the connector
 ' Parameters:
@@ -51,7 +51,7 @@ Public Function Create(sheetName As String, expectExisting As Boolean, deleteExi
         End If
         i = 2   'skip column 1
         v = GetCleanStringValue(1, i)
-        Set columnKeys = New Collection
+        Set columnKeys = New collection
         While Len(v) > 0
             Call columnKeys.Add(v)
             i = i + 1
@@ -59,7 +59,7 @@ Public Function Create(sheetName As String, expectExisting As Boolean, deleteExi
         Wend
         i = 2   'skip row 1
         v = GetCleanStringValue(i, 1)
-        Set rowKeys = New Collection
+        Set rowKeys = New collection
         While Len(v) > 0
             Call rowKeys.Add(v)
             i = i + 1
@@ -74,20 +74,37 @@ End Function
 '  -
 Public Sub CloseConnector()
     Set sheet = Nothing
-    Set columnKeys = New Collection
-    Set rowKeys = New Collection
+    Set columnKeys = New collection
+    Set rowKeys = New collection
 End Sub
 
-
-
-
-' Adapts the width of all columns to its contents
+' Shape up the sheet's visual appearance and close the connector
 ' Parameters:
 '   -
-Public Sub FitAllColumns()
+Public Sub ShapeUpSheetAndCloseConnector()
+    ' Sort
+    sheet.Cells.Select
+    sheet.Sort.SortFields.Clear
+    sheet.Sort.SortFields.Add2 key:=Range(sheet.Cells(2, 1), sheet.Cells(1 + rowKeys.Count, 1)), _
+        SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+    With sheet.Sort
+        .SetRange Range(sheet.Cells(1, 1), Cells(1 + rowKeys.Count, 1 + columnKeys.Count))
+        .Header = xlYes
+        .MatchCase = True
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+    
+    ' Adapts the width of all columns to its contents
     sheet.Cells.Select
     sheet.Cells.EntireColumn.AutoFit
+    
+    ' Remove the selection
     sheet.Cells(1, 1).Select
+    
+    ' And finally close (necessary, our keys are no longer valid after the sorting
+    Call CloseConnector
 End Sub
 
 ' Makes a clean string. Apply to values retrieved from an excel cell or to be put in an excel cell.
@@ -211,7 +228,7 @@ End Function
 ' Parameters:
 '   rowKey: the value (key) in column 1 of the row
 '   keyValues: collection of CKeyValue objects, where each key is a column key and each value is the value to be cleaned and written
-Public Sub SetStringValues(rowKey, keyValues As Collection)
+Public Sub SetStringValues(rowKey, keyValues As collection)
     Dim r As Integer
     Dim kv As CKeyValue
     r = GetRowIndex(rowKey)
@@ -226,8 +243,8 @@ End Sub
 ' Returns:
 '   Collection of CKeyValue objects, where each key is a column key and each value is the cleaned value read.
 '   For rows not found, the collection is empty.
-Public Function GetStringValues(rowKey) As Collection
-    Set GetStringValues = New Collection
+Public Function GetStringValues(rowKey) As collection
+    Set GetStringValues = New collection
     
     Dim r As Integer
     Dim columnKey As Variant

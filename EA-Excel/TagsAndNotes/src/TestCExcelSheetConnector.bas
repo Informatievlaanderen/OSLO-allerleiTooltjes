@@ -4,7 +4,7 @@ Public Sub TestExcelSheetConnector()
     Dim xlsc As New CExcelSheetConnector
     Dim i As Integer
     Dim j As Integer
-    Dim coll As Collection
+    Dim coll As collection
     Dim kv As Variant
     
     ' delete existing if any
@@ -68,7 +68,7 @@ Public Sub TestExcelSheetConnector()
         Next
     Next
     ' fill 6 values in a new 6th row (remark: should add 1 row and 1 column automatically)
-    Set coll = New Collection
+    Set coll = New collection
     i = 6
     For j = 1 To 6
         Set kv = New CKeyValue

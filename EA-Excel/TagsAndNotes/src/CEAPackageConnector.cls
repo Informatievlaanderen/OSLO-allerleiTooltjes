@@ -12,7 +12,8 @@ Option Explicit
 Private app As EA.app
 Private repo As EA.Repository
 Private package As EA.package
-Private elements As EA.Collection
+Private elements As EA.collection
+Private packageNames As Scripting.Dictionary
 
 Private Const longTagWorkaround As String = "NOTE"
 Private Const semiTagNameForNotes As String = "(notes)"
@@ -39,8 +40,10 @@ Public Function Create() As Boolean
             If Not package Is Nothing Then
                 ' Haal alle elementen op uit het package
                 Dim query
-                query = "select to.object_id FROM t_object to WHERE to.package_id=" & package.PackageID
+                query = "select to.object_id FROM t_object to WHERE to.package_id=" & package.packageID
                 Set elements = repo.GetElementSet(query, 2)
+                Set packageNames = CreateObject("Scripting.Dictionary")
+                Call packageNames.Add(CStr(package.packageID), package.name)
                 Create = True
             End If
         End If
@@ -152,7 +155,7 @@ End Sub
 '   name: name of the tag
 Private Sub DeleteTag(owner, name As String)
     If Not owner Is Nothing And Len(name) > 0 Then
-        Dim tvs As EA.Collection
+        Dim tvs As EA.collection
         Set tvs = owner.TaggedValues
         Dim i, tv
         If owner.ObjectType = EA.otConnectorEnd Then
@@ -217,13 +220,13 @@ End Sub
 ' Makes an identifying string for an object in a hierarchy.
 ' The identifying string consists of different parts, constructed from the names in the hierarchy.
 ' The different parts are separated by a "|".
-' Each part is prefixed by a letter followed by a ":". Prefix letters:
-'   k: for classes
-'   d: for datatypes
-'   e: for enumerations
-'   a: for attributs
-'   c: for connectors
-'   r: for roles (aka connector ends with a non-empty name)
+' Each part is prefixed by a letter followed by a "=". Prefix letters:
+'   k for classes
+'   d for datatypes
+'   e for enumerations
+'   a for attributs
+'   c for connectors
+'   r for roles (aka connector ends with a non-empty name)
 ' Parameters:
 '   hierarchy: array of objects containing one or more entries. Possible types:
 '     EA.Element, EA.Attribute, EA.Connector, EA.ConnectorEnd
@@ -231,26 +234,32 @@ Private Function IdentifyingString(hierarchy) As String
     IdentifyingString = ""
     
     Dim obj
+    Dim packageName As String
     For Each obj In hierarchy
         If IdentifyingString <> "" Then
             IdentifyingString = IdentifyingString & "|"
         End If
         Select Case obj.ObjectType
         Case EA.otElement
+            packageName = packageNames(CStr(obj.packageID))
+            If packageName = "" Then
+                packageName = repo.GetPackageByID(obj.packageID).name
+                packageNames(CStr(obj.packageID)) = packageName
+            End If
             Select Case LCase(obj.MetaType)
             Case "datatype"
-                IdentifyingString = IdentifyingString & "d:" & obj.name
+                IdentifyingString = IdentifyingString & "d=" & packageName & "::" & obj.name
             Case "enumeration"
-                IdentifyingString = IdentifyingString & "e:" & obj.name
+                IdentifyingString = IdentifyingString & "e=" & packageName & "::" & obj.name
             Case Else
-                IdentifyingString = IdentifyingString & "k:" & obj.name
+                IdentifyingString = IdentifyingString & "k=" & packageName & "::" & obj.name
             End Select
         Case EA.otAttribute
-            IdentifyingString = IdentifyingString & "a:" & obj.name
+            IdentifyingString = IdentifyingString & "a=" & obj.name
         Case EA.otConnector
-            IdentifyingString = IdentifyingString & "c:" & obj.name
+            IdentifyingString = IdentifyingString & "c=" & obj.name
         Case EA.otConnectorEnd
-            IdentifyingString = IdentifyingString & "r:" & obj.Role
+            IdentifyingString = IdentifyingString & "r=" & obj.Role
         End Select
     Next
 End Function
@@ -350,8 +359,8 @@ End Function
 '   Collection of CKeyValue objects
 '   - key: "(notes)" for notes, else the tag name
 '   - value: notes, tag value
-Private Function PullOneOwner(owner) As Collection
-    Set PullOneOwner = New Collection
+Private Function PullOneOwner(owner) As collection
+    Set PullOneOwner = New collection
 
     Dim kv As CKeyValue
     Dim tv
@@ -379,7 +388,7 @@ End Function
 '   coll: Collection of CKeyValue objects
 '     - key: "(notes)" for notes, else the tag name
 '     - value: notes, tag value
-Private Sub PushOneOwner(owner, coll As Collection)
+Private Sub PushOneOwner(owner, coll As collection)
     Dim kv As CKeyValue
     For Each kv In coll
         If Len(kv.value) > 0 Then
@@ -405,11 +414,14 @@ End Sub
 '   xlsc: Excel sheet connector where the pulled results must be written to
 Public Sub PullAll(xlsc As CExcelSheetConnector)
     Dim elem As EA.element
-    Dim otherElem As EA.element
-    Dim attributes As EA.Collection
+    Dim attributes As EA.collection
     Dim att As EA.Attribute
-    Dim connectors As EA.Collection
+    Dim connectors As EA.collection
     Dim conn As EA.connector
+    Dim handledConnectors As Scripting.Dictionary 'Use this in stead of a set, which doesn't exist in VBA
+    Set handledConnectors = CreateObject("Scripting.Dictionary")
+    Dim sourceElem As EA.element
+    Dim targetElem As EA.element
     For Each elem In elements
         If elem.Type = "Class" Or elem.Type = "Enumeration" Or elem.Type = "DataType" Then
             Call xlsc.SetStringValues(IdentifyingString(Array(elem)), PullOneOwner(elem))
@@ -420,20 +432,27 @@ Public Sub PullAll(xlsc As CExcelSheetConnector)
             Set connectors = elem.connectors
             For Each conn In connectors
                 If conn.Type = "Association" Or conn.Type = "Aggregation" Or conn.Type = "Composition" Then
-                    ' Handling connectors from one element (source side) is enough
-                    If conn.ClientID = elem.ElementID Then
-                        Set otherElem = repo.GetElementByID(conn.SupplierID)
+                    ' If both connector ends connect to elements of the same package, they will appear twice here; handle only one
+                    If Not handledConnectors.Exists(CStr(conn.ConnectorID)) Then
+                        Call handledConnectors.Add(CStr(conn.ConnectorID), "")
+                        If conn.ClientID = elem.ElementID Then
+                            Set sourceElem = elem
+                            Set targetElem = repo.GetElementByID(conn.SupplierID)
+                        Else
+                            Set sourceElem = repo.GetElementByID(conn.ClientID)
+                            Set targetElem = elem
+                        End If
                         ' Handle the connector (unless if it's nameless)
                         If Len(conn.name) > 0 Then
-                            Call xlsc.SetStringValues(IdentifyingString(Array(elem, conn, otherElem)), PullOneOwner(conn))
+                            Call xlsc.SetStringValues(IdentifyingString(Array(sourceElem, conn, targetElem)), PullOneOwner(conn))
                         End If
                         ' Handle the role at the target side (unless if it's nameless)
                         If Len(conn.SupplierEnd.Role) > 0 Then
-                            Call xlsc.SetStringValues(IdentifyingString(Array(elem, conn.SupplierEnd, otherElem)), PullOneOwner(conn.SupplierEnd))
+                            Call xlsc.SetStringValues(IdentifyingString(Array(sourceElem, conn.SupplierEnd, targetElem)), PullOneOwner(conn.SupplierEnd))
                         End If
                         ' Handle the role at the source side (unless if it's nameless)
                         If Len(conn.ClientEnd.Role) > 0 Then
-                            Call xlsc.SetStringValues(IdentifyingString(Array(otherElem, conn.ClientEnd, elem)), PullOneOwner(conn.ClientEnd))
+                            Call xlsc.SetStringValues(IdentifyingString(Array(targetElem, conn.ClientEnd, sourceElem)), PullOneOwner(conn.ClientEnd))
                         End If
                     End If
                 End If
@@ -448,11 +467,14 @@ End Sub
 '   xlsc: Excel sheet connector where the input to be pushed must be read from
 Public Sub PushAll(xlsc As CExcelSheetConnector)
     Dim elem As EA.element
-    Dim otherElem As EA.element
-    Dim attributes As EA.Collection
+    Dim attributes As EA.collection
     Dim att As EA.Attribute
-    Dim connectors As EA.Collection
+    Dim connectors As EA.collection
     Dim conn As EA.connector
+    Dim handledConnectors As Scripting.Dictionary 'Use this in stead of a set, which doesn't exist in VBA
+    Set handledConnectors = CreateObject("Scripting.Dictionary")
+    Dim sourceElem As EA.element
+    Dim targetElem As EA.element
     For Each elem In elements
         If elem.Type = "Class" Or elem.Type = "Enumeration" Or elem.Type = "DataType" Then
             Call PushOneOwner(elem, xlsc.GetStringValues(IdentifyingString(Array(elem))))
@@ -463,20 +485,27 @@ Public Sub PushAll(xlsc As CExcelSheetConnector)
             Set connectors = elem.connectors
             For Each conn In connectors
                 If conn.Type = "Association" Or conn.Type = "Aggregation" Or conn.Type = "Composition" Then
-                    ' Handling connectors from one element (source side) is enough
-                    If conn.ClientID = elem.ElementID Then
-                        Set otherElem = repo.GetElementByID(conn.SupplierID)
+                    ' If both connector ends connect to elements of the same package, they will appear twice here; handle only one
+                    If Not handledConnectors.Exists(CStr(conn.ConnectorID)) Then
+                        Call handledConnectors.Add(CStr(conn.ConnectorID), "")
+                        If conn.ClientID = elem.ElementID Then
+                            Set sourceElem = elem
+                            Set targetElem = repo.GetElementByID(conn.SupplierID)
+                        Else
+                            Set sourceElem = repo.GetElementByID(conn.ClientID)
+                            Set targetElem = elem
+                        End If
                         ' Handle the connector (unless if it's nameless)
                         If Len(conn.name) > 0 Then
-                            Call PushOneOwner(conn, xlsc.GetStringValues(IdentifyingString(Array(elem, conn, otherElem))))
+                            Call PushOneOwner(conn, xlsc.GetStringValues(IdentifyingString(Array(sourceElem, conn, targetElem))))
                         End If
                         ' Handle the role at the target side (unless if it's nameless)
                         If Len(conn.SupplierEnd.Role) > 0 Then
-                            Call PushOneOwner(conn.SupplierEnd, xlsc.GetStringValues(IdentifyingString(Array(elem, conn.SupplierEnd, otherElem))))
+                            Call PushOneOwner(conn.SupplierEnd, xlsc.GetStringValues(IdentifyingString(Array(sourceElem, conn.SupplierEnd, targetElem))))
                         End If
                         ' Handle the role at the source side (unless if it's nameless)
                         If Len(conn.ClientEnd.Role) > 0 Then
-                            Call PushOneOwner(conn.ClientEnd, xlsc.GetStringValues(IdentifyingString(Array(otherElem, conn.ClientEnd, elem))))
+                            Call PushOneOwner(conn.ClientEnd, xlsc.GetStringValues(IdentifyingString(Array(targetElem, conn.ClientEnd, sourceElem))))
                         End If
                     End If
                 End If
