@@ -58,8 +58,8 @@ Overzicht:
 
 | methode | item | in package | op diagram | behandeld |
 |---------|------|------------|------------|-----------|
-| klasse, datatype, enumeratie | ja | x | ja |
-| klasse, datatype, enumeratie | nee| x | nee |
+| package-gericht | klasse, datatype, enumeratie | ja | x | ja |
+| package-gericht | klasse, datatype, enumeratie | nee| x | nee |
 
 | methode | onderliggend item | owner in package | owner op diagram | behandeld |
 |---------|-------------------|------------------|------------------|-----------|
@@ -153,9 +153,8 @@ Volgende speciale instructies worden ondersteund:
 Indien nodig, voeg extra kolommen toe, bijvoorbeeld voor "package", "ignore", "ap-codelist", ...
 De volgorde van de kolommen is van geen belang.
 
-**Opgelet**
-
-- Let op met conversies die Excel automatisch doet op getallen en booleans. Voeg indien nodig een leidende `'` toe, bijvoorbeeld: `'true`.
+Opgelet:
+- Let op met conversies die Excel automatisch doet op getallen en booleans. Vooral de conversie naar TRUE/FALSE stoort ons, omdat wij bijvoorbeeld voor de igore tag true/false nodig hebben. Voeg indien nodig een leidende `'` toe, zoals: `'true`.
 - Let op met speciale karakters eigen aan de Windows omgeving. Typisch zijn de drie puntjes ... die als één karakter worden voorgesteld. Wijzig deze manueel naar gewone karakters!
 
 **Voorbeeld van een ingevulde tabel**
