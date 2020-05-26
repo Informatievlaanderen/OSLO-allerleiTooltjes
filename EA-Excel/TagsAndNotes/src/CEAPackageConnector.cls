@@ -12,6 +12,7 @@ Option Explicit
 Private app As EA.app
 Private repo As EA.Repository
 Private package As EA.package
+Private diagram As EA.diagram
 Private elements As EA.collection
 Private packageNames As Scripting.Dictionary
 
@@ -19,14 +20,21 @@ Private Const longTagWorkaround As String = "NOTE"
 Private Const semiTagNameForNotes As String = "(notes)"
 Private Const specialValueDeleteCommand As String = "d!"
 
+Public Enum CreateEAPackageResult
+CREATED_NOTHING
+CREATED_FROM_PACKAGE
+CREATED_FROM_DIAGRAM
+End Enum
+
+
 
 ' Creates the Enterprise Architect package connector
 ' Parameters:
 '   -
 ' Return:
-'   True means creation successful
-Public Function Create() As Boolean
-    Create = False
+'   CreateEAPackageResult
+Public Function Create() As CreateEAPackageResult
+    Create = CREATED_NOTHING
     
     Set app = Nothing
     Set repo = Nothing
@@ -38,13 +46,25 @@ Public Function Create() As Boolean
         If Not repo Is Nothing Then
             Set package = repo.GetTreeSelectedPackage()
             If Not package Is Nothing Then
-                ' Haal alle elementen op uit het package
                 Dim query
-                query = "select to.object_id FROM t_object to WHERE to.package_id=" & package.packageID
+                ' Kijk na of een diagram geselecteerd is
+                Dim selectedObject
+                Set selectedObject = repo.GetTreeSelectedObject()
+                If selectedObject.ObjectType = EA.otDiagram Then
+                    ' query voor alle elementen die op het diagram staan
+                    Set diagram = selectedObject
+                    query = "select to.object_id from (t_diagramobjects inner join t_diagram on t_diagramobjects.diagram_id = t_diagram.diagram_id) inner join t_object as to on to.object_id = t_diagramobjects.object_id where t_diagram.diagram_id=" & diagram.DiagramID
+                    Create = CREATED_FROM_DIAGRAM
+                Else
+                    ' query voor alle elementen die in het package zitten
+                    query = "select to.object_id FROM t_object to WHERE to.package_id=" & package.packageID
+                    Create = CREATED_FROM_PACKAGE
+                End If
+                ' Haal deze alle op
                 Set elements = repo.GetElementSet(query, 2)
+                ' Een cache voor package namen
                 Set packageNames = CreateObject("Scripting.Dictionary")
                 Call packageNames.Add(CStr(package.packageID), package.name)
-                Create = True
             End If
         End If
     End If
@@ -58,6 +78,41 @@ End Function
 Public Function GetPackageName() As String
     GetPackageName = package.name
 End Function
+
+' Gets the name of the selected diagram in the selected package
+' Parameters:
+'   -
+' Returns:
+'   String; "" if no diagram is selected
+Public Function GetDiagramName() As String
+    GetDiagramName = ""
+    
+    If Not diagram Is Nothing Then
+        GetDiagramName = diagram.name
+    End If
+End Function
+
+' Call this method before modifying the EA model. It increases speed.
+' Parameters:
+'   -
+Private Sub DisableUI()
+    repo.EnableUIUpdates = False
+End Sub
+
+' Call this method when finished modifying the EA model. It updates the UI and positions the project browser on the initially selected item.
+' Parameters:
+'   -
+Private Sub EnableUI()
+    If Not diagram Is Nothing Then
+        Call repo.RefreshModelView(0)
+        Call repo.ShowInProjectView(diagram)
+    Else
+        Call repo.RefreshModelView(package.packageID)
+        Call repo.ShowInProjectView(package)
+    End If
+    repo.EnableUIUpdates = True
+End Sub
+
 
 ' Gets a tag object
 ' Parameters:
@@ -475,6 +530,7 @@ Public Sub PushAll(xlsc As CExcelSheetConnector)
     Set handledConnectors = CreateObject("Scripting.Dictionary")
     Dim sourceElem As EA.element
     Dim targetElem As EA.element
+    Call DisableUI
     For Each elem In elements
         If elem.Type = "Class" Or elem.Type = "Enumeration" Or elem.Type = "DataType" Then
             Call PushOneOwner(elem, xlsc.GetStringValues(IdentifyingString(Array(elem))))
@@ -512,5 +568,6 @@ Public Sub PushAll(xlsc As CExcelSheetConnector)
             Next
         End If
    Next
+   Call EnableUI
 End Sub
 

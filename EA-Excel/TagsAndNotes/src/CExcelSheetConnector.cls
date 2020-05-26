@@ -50,20 +50,20 @@ Public Function Create(sheetName As String, expectExisting As Boolean, deleteExi
             sheet.Columns("A:A").Font.Bold = True
         End If
         i = 2   'skip column 1
-        v = GetCleanStringValue(1, i)
+        v = CleanKey(sheet.Cells(1, i))
         Set columnKeys = New collection
         While Len(v) > 0
             Call columnKeys.Add(v)
             i = i + 1
-            v = GetCleanStringValue(1, i)
+            v = CleanKey(sheet.Cells(1, i))
         Wend
         i = 2   'skip row 1
-        v = GetCleanStringValue(i, 1)
+        v = CleanKey(sheet.Cells(i, 1))
         Set rowKeys = New collection
         While Len(v) > 0
             Call rowKeys.Add(v)
             i = i + 1
-            v = GetCleanStringValue(i, 1)
+            v = CleanKey(sheet.Cells(i, 1))
         Wend
         Create = True
     End If
@@ -96,10 +96,14 @@ Public Sub ShapeUpSheetAndCloseConnector()
         .Apply
     End With
     
-    ' Adapts the width of all columns to its contents
+    ' Adapts the width of all columns
     sheet.Cells.Select
-    sheet.Cells.EntireColumn.AutoFit
-    
+    ' this is not so handy (once long values are entered)
+    'sheet.Cells.EntireColumn.AutoFit
+    ' this is a compromise
+    sheet.Range("A1").Activate
+    Selection.ColumnWidth = 40
+
     ' Remove the selection
     sheet.Cells(1, 1).Select
     
@@ -107,23 +111,43 @@ Public Sub ShapeUpSheetAndCloseConnector()
     Call CloseConnector
 End Sub
 
-' Makes a clean string. Apply to values retrieved from an excel cell or to be put in an excel cell.
+' Makes a clean string to be used as a key in the top row or left column.
 ' Parameters:
 '   x: input value
 ' Return:
 '   String
-Private Function CleanString(x) As String
-    CleanString = Trim(CStr(x))
+Private Function CleanKey(x) As String
+    CleanKey = Trim(CStr(x))
 End Function
 
-' Gets a clean string from an excel cell.
+' Makes a clean string. Apply to values to be written to a cell.
 ' Parameters:
-'   r: the row index
-'   c: the column index
+'   x: input value
 ' Return:
 '   String
-Private Function GetCleanStringValue(r As Integer, c As Integer) As String
-    GetCleanStringValue = CleanString(sheet.Cells(r, c))
+Private Function CleanStringBeforeWriting(x) As String
+    CleanStringBeforeWriting = Trim(CStr(x))
+    If Len(CleanStringBeforeWriting) > 0 Then
+        If Mid(CleanStringBeforeWriting, 1, 1) <> "'" Then
+            ' add leading single quote to avoid Excel conversions on numbers and booleans!
+            CleanStringBeforeWriting = "'" & CleanStringBeforeWriting
+        End If
+    End If
+End Function
+
+' Makes a clean string. Apply to values read from a cell.
+' Parameters:
+'   x: input value
+' Return:
+'   String
+Private Function CleanStringAfterReading(x) As String
+    CleanStringAfterReading = Trim(CStr(x))
+    If Len(CleanStringAfterReading) > 0 Then
+        If Mid(CleanStringAfterReading, 1, 1) = "'" Then
+            ' undo leading single quote
+            CleanStringAfterReading = Mid(CleanStringAfterReading, 2, Len(CleanStringAfterReading))
+        End If
+    End If
 End Function
 
 ' Gets the row index of the row given by a key.
@@ -138,7 +162,7 @@ Private Function GetRowIndex(rowKey, Optional addMissing As Boolean = True) As I
     Dim k As String
     Dim i As Integer
     Dim v As Variant
-    k = CleanString(rowKey)
+    k = CleanKey(rowKey)
     i = 2   'skip row 1
     For Each v In rowKeys
         If v = k Then
@@ -166,7 +190,7 @@ Private Function GetColumnIndex(columnKey, Optional addMissing As Boolean = True
     Dim k As String
     Dim i As Integer
     Dim v As Variant
-    k = CleanString(columnKey)
+    k = CleanKey(columnKey)
     i = 2   'skip column 1
     For Each v In columnKeys
         If v = k Then
@@ -204,7 +228,7 @@ End Sub
 '   columnKey: the value (key) in row 1 of the column
 '   value: the value to be cleaned and written in the cell
 Public Sub SetStringValue(rowKey, columnKey, value)
-    sheet.Cells(GetRowIndex(rowKey), GetColumnIndex(columnKey)).value = CleanString(value)
+    sheet.Cells(GetRowIndex(rowKey), GetColumnIndex(columnKey)).value = CleanStringBeforeWriting(value)
 End Sub
 
 ' Gets a cleaned value from a cell, given by its row and column keys.
@@ -216,7 +240,7 @@ End Sub
 '   String
 Public Function GetStringValue(rowKey, columnKey, Optional defaultValue As String = "") As String
     On Error Resume Next
-    GetStringValue = CleanString(sheet.Cells(GetRowIndex(rowKey, False), GetColumnIndex(columnKey, False)).value)
+    GetStringValue = CleanStringAfterReading(sheet.Cells(GetRowIndex(rowKey, False), GetColumnIndex(columnKey, False)).value)
     If Err.Number <> 0 Then
         Err.Clear
         GetStringValue = defaultValue
@@ -233,7 +257,7 @@ Public Sub SetStringValues(rowKey, keyValues As collection)
     Dim kv As CKeyValue
     r = GetRowIndex(rowKey)
     For Each kv In keyValues
-        sheet.Cells(r, GetColumnIndex(kv.key)).value = CleanString(kv.value)
+        sheet.Cells(r, GetColumnIndex(kv.key)).value = CleanStringBeforeWriting(kv.value)
     Next
 End Sub
 
@@ -254,7 +278,7 @@ Public Function GetStringValues(rowKey) As collection
         For Each columnKey In columnKeys
             Set kv = New CKeyValue
             kv.key = columnKey
-            kv.value = CleanString(sheet.Cells(r, GetColumnIndex(columnKey, False)).value)
+            kv.value = CleanStringAfterReading(sheet.Cells(r, GetColumnIndex(columnKey, False)).value)
             Call GetStringValues.Add(kv)
         Next
     End If

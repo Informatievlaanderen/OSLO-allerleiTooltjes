@@ -83,6 +83,16 @@ Public Sub TestExcelSheetConnector()
     Next
     ' check not existing row
     Debug.Assert xlsc.GetStringValues("bad row key").Count = 0
+    
+    ' check conversions are disabled
+    Call xlsc.SetStringValue("booleanTest1", "boolean", "true")
+    Debug.Assert xlsc.GetStringValue("booleanTest1", "boolean") = "true"
+    Call xlsc.SetStringValue("booleanTest2", "boolean", "false")
+    Debug.Assert xlsc.GetStringValue("booleanTest2", "boolean") = "false"
+    Call xlsc.SetStringValue("numberTest1", "number", "0,1234567890123456789")
+    Debug.Assert xlsc.GetStringValue("numberTest1", "number") = "0,1234567890123456789"
+    Call xlsc.SetStringValue("numberTest2", "number", "1E20")
+    Debug.Assert xlsc.GetStringValue("numberTest2", "number") = "1E20"
 
 End Sub
 

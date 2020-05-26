@@ -10,7 +10,7 @@ Voor het maken van deze tool werd inspiratie gehaald uit [Geert Bellekens' Simpl
 Het basisprincipe om macro's te linken aan het Excel menu systeem werd hieraan ontleend (met dank).
 
 Verder is de tool totaal verschillend uitgewerkt:
-- Tags worden niet geïdentificeerd door middel van EA's GUIDs, maar door een eigen formaat, met leesbare referenties, die uniek zijn binnen een package en bovendien geschikt zijn voor "menselijke consumptie".
+- Tags worden niet geïdentificeerd door middel van EA's GUIDs, maar door een eigen formaat, met unieke leesbare referenties, die geschikt zijn voor "menselijke consumptie".
 Dit laat uitwisseling toe tussen verschillende modellen waarin dezelfde items voorkomen.
 - Ook notes op items (niet te verwarren met notes op tags) worden behandeld.
 - Er is ondersteuning voor symbolische waarden ter ondersteuning van automatisering bij het initiëel toekennen van waarden aan tags, in OSLO-stijl.
@@ -22,13 +22,59 @@ Ben je enkel van plan om tags in te vullen in een bestaande tabel, ga dan onmidd
 
 ### Voorbereiding
 Maak een kopie van TagsAndNotes.xlsm naar je eigen werkomgeving.
-In praktijk is één kopie nodig hebben per package en per EA model.
-Een goede bestandsnaam is dus `<EA-model-bestandnaam>-<packagenaam>.xlsm`.
+In praktijk is één kopie nodig per EA model en per diagram (als je diagram-gericht werkt) of per EA model en per package (als je package-gericht werkt).
+Deze beide manieren van werken worden hieronder toegelicht.
+
+Goede bestandsnamen voor de kopie zijn dus `<EA-model-bestandnaam>-diagram-<diagramnaam>.xlsm` resp. `<EA-model-bestandnaam>-package-<packagenaam>.xlsm`.
 
 Hieronder noemen we dit bestand eenvoudigweg het "het .xlsm bestand".
 
 Bij het voor de eerste keer openen van dit bestand wordt allicht een beveiligingswaarschuwing gegeven.
 Klik dan op "Enable Content".
+
+### Diagram-gericht of package-gericht?
+Bij diagram-gericht werken behandelt de tool:
+- de items die op het in de project browser geselecteerde **diagram** voorkomen
+- plus de onderliggende items waarvan ze "owner" zijn.
+
+Bij package-gericht werken behandelt de tool:
+- de items die in het in de project browser geselecteerde **package** voorkomen
+- plus de onderliggende items waarvan ze "owner" zijn
+- plus de connectoren (en rollen) tussen de items in dit package en elk mogelijk ander package.
+
+Overzicht:
+
+| methode | item | in package | op diagram | behandeld |
+|---------|------|------------|------------|-----------|
+| diagram-gericht | klasse, datatype, enumeratie | x | ja | ja |
+| diagram-gericht | klasse, datatype, enumeratie | x | nee | nee |
+
+| methode | onderliggend item | owner in package | owner op diagram | behandeld |
+|---------|-------------------|------------------|------------------|-----------|
+| diagram-gericht | attribuut(1) | x | ja | ja |
+| diagram-gericht | attribuut(1) | x | nee | nee |
+| diagram-gericht | connector(2), rol(3) | x | ja | ja |
+| diagram-gericht | connector(2), rol(3) | x | nee | nee |
+
+| methode | item | in package | op diagram | behandeld |
+|---------|------|------------|------------|-----------|
+| klasse, datatype, enumeratie | ja | x | ja |
+| klasse, datatype, enumeratie | nee| x | nee |
+
+| methode | onderliggend item | owner in package | owner op diagram | behandeld |
+|---------|-------------------|------------------|------------------|-----------|
+| package-gericht | attribuut(1) | ja | x | ja |
+| package-gericht | attribuut(1) | nee | x | nee |
+| package-gericht | connector(2), rol(3) | ja | x | ja |
+| package-gericht | connector(2), rol(3) | nee | x | ja, als item aan overkant in package |
+
+(1) Owner = item dat het attribuut bevat
+
+(2) Owner = item aan de source kant van de connector
+
+(3) Owner = item aan de overkant van waar de rol staat
+
+Meestal blijkt **diagram-gericht werken** het handigst.
 
 ### Technische stappen om de macro's operationeel te maken
 Dit moet één keer gebeuren per computer waarop je werkt en is alleen mogelijk als EA op je computer geïnstalleerd is.
@@ -57,12 +103,20 @@ Stappen:
 - Open het menu Add-ins en klik op **Pull from EA**.
 - Doe zoals de prompts vragen:
   - Open in EA het modelbestand waaruit gelezen moet worden; opgelet: er mag maar één instance van EA open staan.
-  - Selecteer in de EA project browser het package waaruit gelezen moet worden.
+  - Selecteer in de EA project browser:
+    - voor diagram-gericht werken: het diagram waaruit gelezen moet worden.
+    - voor package-gericht werken: het package waaruit gelezen moet worden.
 - Wacht op de melding dat de bewerking klaar is.
 
-**Voorbeeld input package:**
+**Voorbeeld input diagram:**
 
 ![TestPackage](jpg/TestPackage.JPG)
+
+Dit diagram komt uit het voorbeeld EA bestand TagsAndNotes.EAP.
+
+Voor dit voorbeeld EA bestand maakt het niet uit of voor diagram-gericht of package-gericht werken wordt gekozen.
+
+Een ander voorbeeld EA bestand TagsAndNotes2Pgs.EAP maakt wel het verschil duidelijk. Dit staat ter beschikking om mee te experimenteren.
 
 **Voorbeeld resultaat, na een eerste pull, indien nog geen tags en notes ingevuld waren in het model:**
 
@@ -99,6 +153,11 @@ Volgende speciale instructies worden ondersteund:
 Indien nodig, voeg extra kolommen toe, bijvoorbeeld voor "package", "ignore", "ap-codelist", ...
 De volgorde van de kolommen is van geen belang.
 
+**Opgelet**
+
+- Let op met conversies die Excel automatisch doet op getallen en booleans. Voeg indien nodig een leidende `'` toe, bijvoorbeeld: `'true`.
+- Let op met speciale karakters eigen aan de Windows omgeving. Typisch zijn de drie puntjes ... die als één karakter worden voorgesteld. Wijzig deze manueel naar gewone karakters!
+
 **Voorbeeld van een ingevulde tabel**
 
 ![ExamplePush1](jpg/ExamplePush1.JPG)
@@ -127,7 +186,6 @@ Stappen:
 ### Tips & tricks
 - Haal altijd tags en notes op uit EA (pull) alvorens te editeren in de tabel, om zo in sync te zijn met de laatste toestand van het model.
 - Maak zoveel mogelijk gebruik van de symbolische waarden {...} bij het editeren van cellen. Dit spaart hardcoded werk uit en levert consistente tags op.
-- Let op met speciale karakters eigen aan de Windows omgeving. Typisch zijn de drie puntjes ... die als één karakter worden voorgesteld. Wijzig deze manueel naar gewone karakters!
 - Maak bij het aanpassen van eerdere inhoud altijd gebruik van "Replace" in Excel, zodat alle voorkomens van te vervangen inhoud consitent gewijzigd worden.
 - Voer bij voorkeur na elke push ook een nieuwe pull uit, om het resultaat te verifiëren en om eventuele tussentijdse aanpassingen aan het model vast te stellen.
 Hernoem eerst huidige worksheet "TagsAndNotes" als backup of referentie voor vergelijking.
