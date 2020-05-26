@@ -85,7 +85,7 @@ Public Sub ShapeUpSheetAndCloseConnector()
     ' Sort
     sheet.Cells.Select
     sheet.Sort.SortFields.Clear
-    sheet.Sort.SortFields.Add2 key:=Range(sheet.Cells(2, 1), sheet.Cells(1 + rowKeys.Count, 1)), _
+    sheet.Sort.SortFields.Add key:=Range(sheet.Cells(2, 1), sheet.Cells(1 + rowKeys.Count, 1)), _
         SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
     With sheet.Sort
         .SetRange Range(sheet.Cells(1, 1), Cells(1 + rowKeys.Count, 1 + columnKeys.Count))
