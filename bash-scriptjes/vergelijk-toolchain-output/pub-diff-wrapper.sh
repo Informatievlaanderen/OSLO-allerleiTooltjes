@@ -120,15 +120,33 @@ function make_browse_script() {
 
 # --- Vocabularia
 
-# VOCS: alle vocabularia onder $REF/ns (enkel versieloze URLs),
-# eventueel beperkt met een environment variabele PUB_DIFF_VOCS
+# VOCS: vocabularia onder $REF/ns,
+# eventueel overschreven met een environment variabele PUB_DIFF_VOCS
 # bijvoorbeeld:
-#   export PUB_DIFF_VOCS="besluit bestuur mandaat"
-VOCS=${PUB_DIFF_VOCS:-$(find $REF/ns -mindepth 1 -maxdepth 1 -type d -printf "%f ")}
+#   export PUB_DIFF_VOCS="besluit bestuur mandaat mobiliteit/trips-en-aanbod"
+if [[ -z $PUB_DIFF_VOCS ]] ; then
+	# vindt relatieve paden van index.html bestanden (is goede indicatie dat hier een vocabularium staat)
+	VOCS_TEMP=$(find $REF/ns -mindepth 2 -name 'index.html' -printf "%P " | sed 's:/index.html::g')
+	echo ">>> Mogelijk te vergelijken vocabularia: $VOCS_TEMP"
+	VOCS=''
+	for v in $VOCS_TEMP ; do
+		# filter geversioneerde versies weg
+		if [[ ! $v =~ .*[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].* ]] ; then
+			if [[ -z $VOCS ]] ; then
+				VOCS=$v
+			else
+				VOCS="$VOCS $v"
+			fi
+		fi
+	done
+else
+	VOCS=$PUB_DIFF_VOCS
+fi
 
 echo ">>> Te vergelijken vocabularia: $VOCS"
+
 for v in $VOCS ; do
-	OUT_FILE=$OUT_DIR/voc-${v}-versieloos.txt
+	OUT_FILE=$OUT_DIR/voc-${v//\//-}.txt
 	echo "+++ Output naar $OUT_FILE"
 	HTML_FILE=$REF/ns/$v/index.html
 	make_browse_script $HTML_FILE ${HTML_FILE/$REF/$CMP} $OUT_FILE
@@ -140,15 +158,32 @@ done
 
 # --- Applicatieprofielen
 
-# APS: alle applicatieprofielen onder $REF/doc/applicatieprofiel (enkel versieloze URLs)
-# eventueel beperkt met een environment variabele PUB_DIFF_APS
+# APS: applicatieprofielen onder $REF/doc/applicatieprofiel,
+# eventueel overschreven met een environment variabele PUB_DIFF_APS
 # bijvoorbeeld:
 #   export PUB_DIFF_APS="besluit-publicatie mandatendatabank"
-APS=${PUB_DIFF_APS:-$(find $REF/doc/applicatieprofiel -mindepth 1 -maxdepth 1 -type d -printf "%f ")}
+if [[ -z $PUB_DIFF_APS ]] ; then
+	# vindt relatieve paden van index.html bestanden (is goede indicatie dat hier een vocabularium staat)
+	APS_TEMP=$(find $REF/doc/applicatieprofiel -mindepth 2 -name 'index.html' -printf "%P " | sed 's:/index.html::g')
+	echo ">>> Mogelijk te vergelijken applicatieprofielen: $APS_TEMP"
+	APS=''
+	for a in $APS_TEMP ; do
+		# filter geversioneerde versies weg
+		if [[ ! $a =~ .*[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].* ]] ; then
+			if [[ -z $APS ]] ; then
+				APS=$a
+			else
+				APS="$APS $a"
+			fi
+		fi
+	done
+else
+	APS=$PUB_DIFF_APS
+fi
 
 echo ">>> Te vergelijken applicatieprofielen: $APS"
 for a in $APS ; do
-	OUT_FILE=$OUT_DIR/ap-${a}-versieloos.txt
+	OUT_FILE=$OUT_DIR/ap-${a//\//-}.txt
 	echo "+++ Output naar $OUT_FILE"
 	HTML_FILE=$REF/doc/applicatieprofiel/${a}/index.html
 	make_browse_script $HTML_FILE ${HTML_FILE/$REF/$CMP} $OUT_FILE
