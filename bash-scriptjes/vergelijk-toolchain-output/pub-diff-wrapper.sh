@@ -95,9 +95,16 @@ function make_browse_script() {
 		# Maak URLs van bestandsnamen
 		local REF_URL=${DOMAINS[$REF]}${REF_FILE/$REF/}
 		local CMP_URL=${DOMAINS[$CMP]}${CMP_FILE/$CMP/}
-		# Verwijder /index.html achteraan (de website rendert die niet)
+		# Verwijder /index.html achteraan
 		local REF_URL=${REF_URL%'/index.html'}
 		local CMP_URL=${CMP_URL%'/index.html'}
+		# Voeg trailing slash toe voor applicatieprofielen
+		if [[ $REF_URL =~ .*/applicatieprofiel/.* ]] ; then
+			REF_URL=$REF_URL/
+		fi
+		if [[ $CMP_URL =~ .*/applicatieprofiel/.* ]] ; then
+			CMP_URL=$CMP_URL/
+		fi
 	else
 		local REF_URL=$REF_FILE
 		local CMP_URL=$CMP_FILE
