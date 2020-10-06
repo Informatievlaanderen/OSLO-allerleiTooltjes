@@ -407,22 +407,22 @@ Private Function AugmentedValue(value As String, owner) As String
     End If
 End Function
 
-' Pulls notes and tags from one owner.
+' Gets notes and tags from one owner.
 ' Parameters:
 '   owner: object owning the notes and tags. Possible types: EA.Element, EA.Attribute, EA.Connector, EA.ConnectorEnd
 ' Return:
 '   Collection of CKeyValue objects
 '   - key: "(notes)" for notes, else the tag name
 '   - value: notes, tag value
-Private Function PullOneOwner(owner) As collection
-    Set PullOneOwner = New collection
+Private Function GetTagsAndNotesFromOwner(owner) As collection
+    Set GetTagsAndNotesFromOwner = New collection
 
     Dim kv As CKeyValue
     Dim tv
     Set kv = New CKeyValue
     kv.key = semiTagNameForNotes
     kv.value = GetNotesValue(owner)
-    Call PullOneOwner.Add(kv)
+    Call GetTagsAndNotesFromOwner.Add(kv)
     For Each tv In owner.TaggedValues
         Set kv = New CKeyValue
         If owner.ObjectType = EA.otConnectorEnd Then
@@ -431,11 +431,11 @@ Private Function PullOneOwner(owner) As collection
             kv.key = tv.name
         End If
         kv.value = GetTagValue(owner, kv.key)
-        Call PullOneOwner.Add(kv)
+        Call GetTagsAndNotesFromOwner.Add(kv)
     Next
 End Function
 
-' Pushes notes and tags to one owner.
+' Sets notes and tags in one owner.
 ' Empty values are not pushed (i.e. contents in EA kept as is).
 ' Special value 'delete' will result in notes being cleared or tag being deleted.
 ' Parameters:
@@ -443,7 +443,7 @@ End Function
 '   coll: Collection of CKeyValue objects
 '     - key: "(notes)" for notes, else the tag name
 '     - value: notes, tag value
-Private Sub PushOneOwner(owner, coll As collection)
+Private Sub SetTagsAndNotesInOwner(owner, coll As collection)
     Dim kv As CKeyValue
     For Each kv In coll
         If Len(kv.value) > 0 Then
@@ -479,10 +479,10 @@ Public Sub PullAll(xlsc As CExcelSheetConnector)
     Dim targetElem As EA.element
     For Each elem In elements
         If elem.Type = "Class" Or elem.Type = "Enumeration" Or elem.Type = "DataType" Then
-            Call xlsc.SetStringValues(IdentifyingString(Array(elem)), PullOneOwner(elem))
+            Call xlsc.SetStringValues(IdentifyingString(Array(elem)), GetTagsAndNotesFromOwner(elem))
             Set attributes = elem.attributes
             For Each att In attributes
-                Call xlsc.SetStringValues(IdentifyingString(Array(elem, att)), PullOneOwner(att))
+                Call xlsc.SetStringValues(IdentifyingString(Array(elem, att)), GetTagsAndNotesFromOwner(att))
             Next
             Set connectors = elem.connectors
             For Each conn In connectors
@@ -499,15 +499,15 @@ Public Sub PullAll(xlsc As CExcelSheetConnector)
                         End If
                         ' Handle the connector (unless if it's nameless)
                         If Len(conn.name) > 0 Then
-                            Call xlsc.SetStringValues(IdentifyingString(Array(sourceElem, conn, targetElem)), PullOneOwner(conn))
+                            Call xlsc.SetStringValues(IdentifyingString(Array(sourceElem, conn, targetElem)), GetTagsAndNotesFromOwner(conn))
                         End If
                         ' Handle the role at the target side (unless if it's nameless)
                         If Len(conn.SupplierEnd.Role) > 0 Then
-                            Call xlsc.SetStringValues(IdentifyingString(Array(sourceElem, conn.SupplierEnd, targetElem)), PullOneOwner(conn.SupplierEnd))
+                            Call xlsc.SetStringValues(IdentifyingString(Array(sourceElem, conn.SupplierEnd, targetElem)), GetTagsAndNotesFromOwner(conn.SupplierEnd))
                         End If
                         ' Handle the role at the source side (unless if it's nameless)
                         If Len(conn.ClientEnd.Role) > 0 Then
-                            Call xlsc.SetStringValues(IdentifyingString(Array(targetElem, conn.ClientEnd, sourceElem)), PullOneOwner(conn.ClientEnd))
+                            Call xlsc.SetStringValues(IdentifyingString(Array(targetElem, conn.ClientEnd, sourceElem)), GetTagsAndNotesFromOwner(conn.ClientEnd))
                         End If
                     End If
                 End If
@@ -533,10 +533,10 @@ Public Sub PushAll(xlsc As CExcelSheetConnector)
     Call DisableUI
     For Each elem In elements
         If elem.Type = "Class" Or elem.Type = "Enumeration" Or elem.Type = "DataType" Then
-            Call PushOneOwner(elem, xlsc.GetStringValues(IdentifyingString(Array(elem))))
+            Call SetTagsAndNotesInOwner(elem, xlsc.GetStringValues(IdentifyingString(Array(elem))))
             Set attributes = elem.attributes
             For Each att In attributes
-                Call PushOneOwner(att, xlsc.GetStringValues(IdentifyingString(Array(elem, att))))
+                Call SetTagsAndNotesInOwner(att, xlsc.GetStringValues(IdentifyingString(Array(elem, att))))
             Next
             Set connectors = elem.connectors
             For Each conn In connectors
@@ -553,15 +553,15 @@ Public Sub PushAll(xlsc As CExcelSheetConnector)
                         End If
                         ' Handle the connector (unless if it's nameless)
                         If Len(conn.name) > 0 Then
-                            Call PushOneOwner(conn, xlsc.GetStringValues(IdentifyingString(Array(sourceElem, conn, targetElem))))
+                            Call SetTagsAndNotesInOwner(conn, xlsc.GetStringValues(IdentifyingString(Array(sourceElem, conn, targetElem))))
                         End If
                         ' Handle the role at the target side (unless if it's nameless)
                         If Len(conn.SupplierEnd.Role) > 0 Then
-                            Call PushOneOwner(conn.SupplierEnd, xlsc.GetStringValues(IdentifyingString(Array(sourceElem, conn.SupplierEnd, targetElem))))
+                            Call SetTagsAndNotesInOwner(conn.SupplierEnd, xlsc.GetStringValues(IdentifyingString(Array(sourceElem, conn.SupplierEnd, targetElem))))
                         End If
                         ' Handle the role at the source side (unless if it's nameless)
                         If Len(conn.ClientEnd.Role) > 0 Then
-                            Call PushOneOwner(conn.ClientEnd, xlsc.GetStringValues(IdentifyingString(Array(targetElem, conn.ClientEnd, sourceElem))))
+                            Call SetTagsAndNotesInOwner(conn.ClientEnd, xlsc.GetStringValues(IdentifyingString(Array(targetElem, conn.ClientEnd, sourceElem))))
                         End If
                     End If
                 End If
