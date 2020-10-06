@@ -39,7 +39,7 @@ Stappen:
 - Inspecteer het mogelijks gewijzigde model in EA.
 - Bekijk de logging output in het Immediate window.
 
-## Zelf nieuwe implementaties toevoegen
+### Zelf nieuwe implementaties toevoegen
 - Maak een kopie van een van de subfolders onder **implementaties**; geef indicatieve naam aan folder en bestanden.
 - Pas de **Do...** methodes in de module **CEAPackageConnector** aan naar wens. Tracht een Debug.Print statement uit te voeren in lijn van het voorbeeld, in geval iets werd aangepast.
 - Exporteer de module **CEAPackageConnector** naar de onderliggende **src** folder.
