@@ -29,7 +29,7 @@ Om de macro te runnen, ga in Excel naar **View/Beeld** en druk op **Macros**. Se
 
 - URI
   - De URI van het concept, met als Base URI de ConceptScheme URI, aangevuld met de labels van de hoger gelegen Concepts.
-  - De reden waaom de bovenliggende Concepts mee worden genomen in de URI, is omdat dezelfde Concepts onder verschillende takken worden ondergebracht. Het concept **Plan**           behoort bv. tot **Plannen**, maar ook tot **Vergunningen**. Als de concepten onder **Plan** dan een verwijzing hebben naar dezelfde URI, kan de boomstructuur niet worden         gemaakt. Hierdoor moet er een opsplitsing worden gemaakt voor **Plannen/Plan** en **Vergunningen/Plan**. 
+  - De reden waarom de bovenliggende Concepts mee worden genomen in de URI, is omdat dezelfde Concepts onder verschillende takken worden ondergebracht. Het concept **Plan**           behoort bv. tot **Plannen**, maar ook tot **Vergunningen**. Als de concepten onder **Plan** dan een verwijzing hebben naar dezelfde URI, kan de boomstructuur niet worden         gemaakt. Hierdoor moet er een opsplitsing worden gemaakt voor **Plannen/Plan** en **Vergunningen/Plan**. 
 - skos:prefLabel@nl
   - Het label van het concept. 
   - De default is @nl. Dit moet manueel worden aangepast indien een andere taal gewenst is. 
