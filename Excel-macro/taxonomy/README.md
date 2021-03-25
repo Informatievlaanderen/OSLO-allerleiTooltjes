@@ -9,7 +9,7 @@ Hierna kan dit ttl bestand worden gevisualiseerd op [SKOS Play!](https://skos-pl
 
 In example_taxonomy.xlsm vind je een voorbeeldje van een taxonomie. 
 
-![Vb Taxonomie](png/example_taxonomy.png)
+![Voorbeeld Taxonomie](png/example_taxonomy.png)
 
 Op de eerste drie lijnen worden de gegevens van de SKOS Conceptscheme behandeld:
   - ConceptScheme URI
@@ -35,6 +35,8 @@ Om de macro te runnen, ga in Excel naar **View/Beeld** en druk op **Macros**. Se
   - De default is @nl. Dit moet manueel worden aangepast indien een andere taal gewenst is. 
 - skos:broader
   - De URI van het bovenliggende concept. Inder er geen skos:broader is, is het een topConcept. 
+
+![Voorbeeld SKOS Excel](png/example_skos.png)
 
 Deze Excel kan worden geconverteerd naar een ttl bestand op [SKOS-play Convert](https://skos-play.sparna.fr/play/convert). Indien nodig, kunnen er nog aanpassingen worden gedaan aan de structuur indien er extra velden nodig zijn (e.g. prefix, definition...). Hiervoor kan je best eens de SKOS Play documentatie raadplegen onderaan de webpagina. 
 
