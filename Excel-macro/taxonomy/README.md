@@ -13,7 +13,9 @@ In example_taxonomy.xlsm vind je een voorbeeldje van een taxonomie.
 
 Op de eerste drie lijnen worden de gegevens van de SKOS Conceptscheme behandeld:
   - ConceptScheme URI
-    - De Base URI voor de andere Concepts
+    - De URI van de ConceptScheme
+  - Concept URI
+    - De Base URI voor alle Concepts
   - skos:definition@nl
     - De definitie van het schema (default is nl)
   - skos:prefLabel@nl
@@ -28,7 +30,7 @@ Vanaf lijn 5 wordt de taxonomie weergegeven in niveaus of levels. Dit is vrij in
 Om de macro te runnen, ga in Excel naar **View/Beeld** en druk op **Macros**. Selecteer **excel_to_skos** en druk op Run. Er wordt een nieuwe Excel Sheet aangemaakt met als naam Skos. Deze neemt de Conceptscheme velden over van de vorige sheet. De Taxonomie is omgevormd naar SKOS formaat, met drie velden:
 
 - URI
-  - De URI van het concept, met als Base URI de ConceptScheme URI, aangevuld met de labels van de hoger gelegen Concepts.
+  - De URI van het concept, met als Base URI de Concept URI, aangevuld met de labels van de hoger gelegen Concepts.
   - De reden waarom de bovenliggende Concepts mee worden genomen in de URI, is omdat dezelfde Concepts onder verschillende takken worden ondergebracht. Het concept **Plan**           behoort bv. tot **Plannen**, maar ook tot **Vergunningen**. Als de concepten onder **Plan** dan een verwijzing hebben naar dezelfde URI, kan de boomstructuur niet worden         gemaakt. Hierdoor moet er een opsplitsing worden gemaakt voor **Plannen/Plan** en **Vergunningen/Plan**. 
 - skos:prefLabel@nl
   - Het label van het concept. 
