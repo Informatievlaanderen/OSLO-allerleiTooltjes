@@ -3,6 +3,8 @@
 ## Overview
 validation.py is a Python script designed to validate URIs in an Excel file "TagsAndNotes.xlsm", the scraped excel file of the macro PullFromEA inside TagsAndNotes. Its main purpose is to identify dead links and incorrect anchors in the URIs listed in this file.
 
+The script highlights the cells in the TagsAndNotes excel file where errors potentially occur:
+![image](https://github.com/Informatievlaanderen/OSLO-allerleiTooltjes/assets/15192194/65baa259-6d79-4c23-bc8c-05191ff10c8c)
 
 ## Quick start
 
