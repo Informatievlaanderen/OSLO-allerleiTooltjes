@@ -1,0 +1,8 @@
+openpyxl
+requests
+bs4
+rdflib
+urllib
+os
+shutil
+time
