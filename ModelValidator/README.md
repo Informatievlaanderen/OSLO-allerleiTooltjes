@@ -7,4 +7,4 @@
   ```
 
 * Waarbij -d staat voor het diagram dat je wil toetsen, -f voor de file en -nl voor de taal
-* Ten minste versie 11 vh javaframework hiervoor nodig, liefst laatste versie bvb 17, check versie in command prompt met "jave -version"
+* Ten minste versie 11 vh javaframework hiervoor nodig, liefst laatste versie bvb 17, check versie in command prompt met `java --version`
